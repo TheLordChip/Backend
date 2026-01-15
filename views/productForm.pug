@@ -1,0 +1,13 @@
+html
+    head
+    body
+        form(action = "/createProduct" method="POST")
+            label name
+            input(name="name" type="text")
+            br
+            label price
+            input(name="price" type="number")
+            br
+            input(type="submit" value="save")
+        a(href="/prod") List products
+        p=message

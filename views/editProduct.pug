@@ -1,0 +1,15 @@
+html
+    head
+    body
+        form(action = "/editProduct" method="POST")
+            label id
+            input(name="id" type="text" value=product.id readonly=true)
+            label name
+            input(name="name" type="text" value=product.name)
+            br
+            label price
+            input(name="price" type="number" value=product.price)
+            br
+            input(type="submit" value="save")
+        a(href="/prod") List products
+        p=message

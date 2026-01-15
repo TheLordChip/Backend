@@ -1,0 +1,12 @@
+html
+    head
+    body
+        form(action = "/auth" method = "POST")
+            label login
+            input(type = 'text' name="login")
+            br
+            label password
+            input(type = "password" name="password")
+            br
+            input(type = "submit" value="login")
+        h3=message

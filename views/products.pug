@@ -1,0 +1,18 @@
+html
+    head
+    body
+        table
+            each p in products
+                tr
+                    td=p.id
+                    td=p.name
+                    td=p.price
+                    td
+                        a(href="/edit/"+p.id) Edit product
+                    if userRole==="ADMIN"
+                        td
+                            form(action="/delete/"+p.id method="POST")
+                                input(type="hidden" name="_method" value="DELETE")
+                                input(type="submit" value="DELETE")
+        if userRole==="ADMIN"
+            a(href="/createProd") create product
