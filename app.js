@@ -1,6 +1,11 @@
 const express = require('express');
 const app = express();
 const session = require('express-session')
+let products = [
+    {name: "food", price: 5, id: 1},
+    {name: "drink", price: 2, id: 2},
+    {name: "combo", price: 6, id: 3}];
+let id = 4;
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: 'test',
@@ -8,38 +13,46 @@ app.use(session({
     saveUninitialized: true,
     cookie: { secure: false }
 }));
+const { Pool } = require('pg');
+const pool = new Pool({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'my_products_db',
+    password: 'newpassword', // your new password
+    port: 5433
+});
+
 const ProductController = require("./controllers/productController")
 const productController = new ProductController()
+const { requireAuthUser, requireAuthAdmin } = require("./middleware/auth");
 app.set("view engine", "pug")
 app.set("views", "./views")
 const methodOverride = require ("method-override")
 app.use(methodOverride('_method'))
 const port = 3000;
-let products = [{name: "food", price: 5, id: 1},{name: "drink", price: 2, id: 2},{name: "combo", price: 6, id: 3}]
-let users = [{id: 1, password: "123", name: "Mykola", role: "USER"},{id:2, password:"Admin", name:"Admin", role:"ADMIN"}]
-let id = 4
-function requireAuthUser(req, res, next) {
-    if (req.session.user) {
-        next(); // user is logged in → continue
-    } else {
-        req.session.redirectPass = req.originalUrl
-        res.redirect('/auth'); // not logged in → send to login
-    }
-}
-function requireAuthAdmin(req, res, next) {
-    if (req.session.user && req.session.user.role === "ADMIN") {
-        next(); // user is logged in → continue
-    } else if (req.session.user) {
-        res.render("error", {message: "You don't have permission to view this page"})
+// const idToEdit = Number(req.body.id)
+// const price = Number(req.body.price)
 
-    } else {
-        req.session.redirectPass = req.originalUrl
-        res.redirect('/auth'); // not logged in → send to login
+let users = [{id: 1, password: "123", name: "Mykola", role: "USER"},{id:2, password:"Admin", name:"Admin", role:"ADMIN"}]
+app.get('/prod', requireAuthUser, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM products');
+        console.log("DB QUERY RESULT:", result.rows);
+        let userRole = req.session.user.role;
+        res.render("products", { products: result.rows, userRole });
+    } catch(err) {
+        console.error("DB QUERY ERROR:", err);
+        res.status(500).send("Failed to fetch products");
     }
-}
-app.get('/productsRest', (req, res) => {
-    res.json(products);
 });
+
+
+app.get('/createProd', requireAuthAdmin, (req, res) => {
+    res.render("productForm");
+});
+// app.get('/productsRest', (req, res) => {
+//     res.json(123products);
+// });
 app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
@@ -58,28 +71,44 @@ app.get('/testPug', function(req, res){
     res.render("test", {name:"Charles"})
 })
 
-app.get('/prod', requireAuthUser, productController.getAllProducts /* function(req, res) {
+/*app.get('/prod', requireAuthUser, productController.getAllProducts  function(req, res) {
     let userRole = req.session.user.role
     res.render("products", { products, userRole });
-} */ )
+}) */
 
-app.get('/createProd', requireAuthAdmin, function(req, res){
-    res.render("productForm")
-})
-app.post("/createProduct", function(req, res){
-    let productName = req.body.name
-    let productPrice = req.body.price
-    products.push({name:productName, price:productPrice, id:id})
-    id ++
-    res.render("productForm", {message: "product successfully created"})
-})
-app.post("/editProduct", function(req, res){
-    let id = Number(req.body.id);
-    let productName = req.body.name
-    let productPrice = req.body.price
-    products.forEach((product, index) =>{if(product.id===id){products[index] = {name:productName, price:productPrice, id:id}}})
-    res.render("productForm", {message: "product successfully created"})
-})
+// app.get('/createProd', requireAuthAdmin, function(req, res){
+//     res.render("productForm")
+// })
+app.post("/createProduct", requireAuthAdmin, async function(req, res){
+    let productName = req.body.name;
+    let productPrice = Number(req.body.price);
+
+    try {
+        await pool.query(
+            'INSERT INTO products (name, price) VALUES ($1, $2)',
+            [productName, productPrice]
+        );
+        res.redirect("/prod");
+    } catch(err) {
+        console.error(err);
+        res.status(500).send("Error creating product");
+    }
+});
+app.post("/editProduct", requireAuthAdmin, async (req, res) => {
+    const { id, name, price } = req.body;
+    try {
+        await pool.query(
+            'UPDATE products SET name=$1, price=$2 WHERE id=$3',
+            [name, Number(price), Number(id)]
+        );
+        res.redirect("/prod");
+    } catch(err) {
+        console.error(err);
+        res.status(500).send("Error updating product");
+    }
+});
+
+
 app.get("/edit/:id", function (req, res){
     let id = Number(req.params.id);
     let productForEdit = products.filter(product => product.id === id)
@@ -91,11 +120,17 @@ app.get("/edit/:id", function (req, res){
     }
 
 })
-app.post("/delete/:id", function (req, res){
-    let id = Number(req.params.id)
-    products=products.filter(product => product.id !== id)
-    res.redirect("/prod")
-})
+app.post("/delete/:id", requireAuthAdmin, async (req, res) => {
+    const id = Number(req.params.id);
+    try {
+        await pool.query('DELETE FROM products WHERE id=$1', [id]);
+        res.redirect("/prod");
+    } catch(err) {
+        console.error(err);
+        res.status(500).send("Error deleting product");
+    }
+});
+
 app.get("/auth",function (req, res){
     res.render("auth")
 })

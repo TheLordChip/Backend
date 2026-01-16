@@ -3,7 +3,7 @@ html
     body
         form(action = "/editProduct" method="POST")
             label id
-            input(name="id" type="text" value=product.id readonly=true)
+            input(name="id" type="hidden" value=product.id)
             label name
             input(name="name" type="text" value=product.name)
             br

@@ -3,11 +3,12 @@ html
     body
         form(action = "/createProduct" method="POST")
             label name
-            input(name="name" type="text")
+            input(name="name" type="text" required)
             br
-            label price
-            input(name="price" type="number")
+            label Price:
+            input(name="price" type="number" required)
             br
-            input(type="submit" value="save")
+            input(type="submit" value="save" )
         a(href="/prod") List products
-        p=message
+        if message
+            p=message

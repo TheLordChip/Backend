@@ -12,7 +12,7 @@ html
                     if userRole==="ADMIN"
                         td
                             form(action="/delete/"+p.id method="POST")
-                                input(type="hidden" name="_method" value="DELETE")
+                                //input(type="hidden" name="_method" value="DELETE")
                                 input(type="submit" value="DELETE")
         if userRole==="ADMIN"
             a(href="/createProd") create product
