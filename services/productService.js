@@ -1,15 +1,21 @@
-class ProductService{
+export default class ProductService {
     constructor() {
-        this.products = [{name: "food", price: 5, id: 1},{name: "drink", price: 2, id: 2},{name: "combo", price: 6, id: 3}]
-        this.id = 4
-    }
-    deleteById(id) {
-        this.products = this.products.filter(p => p.id !== id)
+        this.products = [
+            { name: "food", price: 5, id: 1 },
+            { name: "drink", price: 2, id: 2 },
+            { name: "combo", price: 6, id: 3 }
+        ];
+        this.id = 4;
     }
 
-    getAll(){
-        return this.products
+    deleteById(id) {
+        this.products = this.products.filter(p => p.id !== id);
     }
+
+    getAll() {
+        return this.products;
+    }
+
     save(product) {
         if (product.id) {
             const existing = this.products.find(p => p.id === product.id);
@@ -22,6 +28,4 @@ class ProductService{
             this.products.push(product);
         }
     }
-
 }
-module.exports = ProductService

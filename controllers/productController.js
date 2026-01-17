@@ -1,4 +1,4 @@
-const ProductService = require("./../services/productService")
+import ProductService from "./../services/productService.js"
 // class ProductController{
 //     constructor() {
 //         this.productService = new ProductService()
@@ -12,7 +12,7 @@ const ProductService = require("./../services/productService")
 //     }
 // }
 // module.exports = ProductController
-class ProductController {
+export default class ProductController {
     constructor() {
         this.productService = new ProductService()
         this.getAllProducts = this.getAllProducts.bind(this)
@@ -24,4 +24,3 @@ class ProductController {
         res.render("products", { products, userRole })
     }
 }
-module.exports = ProductController

@@ -1,11 +1,14 @@
-const express = require('express');
+import express from 'express';
+import dotenv from 'dotenv';
+dotenv.config(); // ← loads .env into process.env
 const app = express();
-const session = require('express-session')
+import session from 'express-session'
 let products = [
     {name: "food", price: 5, id: 1},
     {name: "drink", price: 2, id: 2},
     {name: "combo", price: 6, id: 3}];
 let id = 4;
+console.log(process.env.DB_PORT, process.env.DB_USER); // *
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: 'test',
@@ -13,7 +16,8 @@ app.use(session({
     saveUninitialized: true,
     cookie: { secure: false }
 }));
-const { Pool } = require('pg');
+import pkg from 'pg';
+const { Pool } = pkg;
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
@@ -22,12 +26,20 @@ const pool = new Pool({
     port: 5432
 });
 
-const ProductController = require("./controllers/productController")
+const dbuser = new Pool({ // change when switch to pgapp
+    host: 'localhost',
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+});
+
+import ProductController from "./controllers/productController.js"
 const productController = new ProductController()
-const { requireAuthUser, requireAuthAdmin } = require("./middleware/auth");
+import { requireAuthUser, requireAuthAdmin } from "./middleware/auth.js";
 app.set("view engine", "pug")
 app.set("views", "./views")
-const methodOverride = require ("method-override")
+import methodOverride from "method-override"
 app.use(methodOverride('_method'))
 const port = 3000;
 // const idToEdit = Number(req.body.id)
