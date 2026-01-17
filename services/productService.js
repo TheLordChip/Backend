@@ -1,31 +1,46 @@
+import pkg from 'pg';
+const { Pool } = pkg;
+
+const pool = new Pool({
+    host: 'localhost',
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+});
+
 export default class ProductService {
     constructor() {
-        this.products = [
-            { name: "food", price: 5, id: 1 },
-            { name: "drink", price: 2, id: 2 },
-            { name: "combo", price: 6, id: 3 }
-        ];
-        this.id = 4;
+        // No in-memory array needed
     }
 
-    deleteById(id) {
-        this.products = this.products.filter(p => p.id !== id);
+    async getAll() {
+        const result = await pool.query('SELECT * FROM shop.products ORDER BY id');
+        return result.rows;
     }
 
-    getAll() {
-        return this.products;
+    async getById(id) {
+        const result = await pool.query('SELECT * FROM shop.products WHERE id=$1', [id]);
+        return result.rows[0]; // undefined if not found
     }
 
-    save(product) {
+    async save(product) {
         if (product.id) {
-            const existing = this.products.find(p => p.id === product.id);
-            if (existing) {
-                existing.name = product.name;
-                existing.price = product.price;
-            }
+            // Update existing product
+            await pool.query(
+                'UPDATE shop.products SET name=$1, price=$2 WHERE id=$3',
+                [product.name, Number(product.price), Number(product.id)]
+            );
         } else {
-            product.id = this.id++;
-            this.products.push(product);
+            // Insert new product
+            await pool.query(
+                "INSERT INTO shop.products (id, name, price) VALUES (nextval('shop.product_seq'), $1, $2)",
+                [product.name, Number(product.price)]
+            );
         }
+    }
+
+    async deleteById(id) {
+        await pool.query('DELETE FROM shop.products WHERE id=$1', [Number(id)]);
     }
 }

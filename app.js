@@ -1,32 +1,24 @@
 import express from 'express';
 import dotenv from 'dotenv';
-dotenv.config(); // ← loads .env into process.env
+dotenv.config();
+import session from 'express-session';
+import pkg from 'pg';
+import methodOverride from 'method-override';
+
+const { Pool } = pkg;
 const app = express();
-import session from 'express-session'
-let products = [
-    {name: "food", price: 5, id: 1},
-    {name: "drink", price: 2, id: 2},
-    {name: "combo", price: 6, id: 3}];
-let id = 4;
-console.log(process.env.DB_PORT, process.env.DB_USER); // *
+const port = 3000;
+
 app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride('_method'));
 app.use(session({
     secret: 'test',
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }
 }));
-import pkg from 'pg';
-const { Pool } = pkg;
-const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'Shop',
-    password: 'REMOVED', // your new password
-    port: 5432
-});
 
-const dbuser = new Pool({ // change when switch to pgapp
+const pool = new Pool({
     host: 'localhost',
     port: process.env.DB_PORT,
     user: process.env.DB_USER,
@@ -34,78 +26,64 @@ const dbuser = new Pool({ // change when switch to pgapp
     database: process.env.DB_NAME,
 });
 
-import ProductController from "./controllers/productController.js"
-const productController = new ProductController()
+import ProductController from "./controllers/productController.js";
 import { requireAuthUser, requireAuthAdmin } from "./middleware/auth.js";
-app.set("view engine", "pug")
-app.set("views", "./views")
-import methodOverride from "method-override"
-app.use(methodOverride('_method'))
-const port = 3000;
-// const idToEdit = Number(req.body.id)
-// const price = Number(req.body.price)
 
-let users = [{id: 1, password: "123", name: "Mykola", role: "USER"},{id:2, password:"Admin", name:"Admin", role:"ADMIN"}]
+const productController = new ProductController();
+
+app.set("view engine", "pug");
+app.set("views", "./views");
+
+app.get('/', (req, res) => res.send('Hello, World!'));
+app.get('/test', (req, res) => res.send('Hello, Test!'));
+app.get('/hello', (req, res) => res.send('Hello, ' + req.query.name));
+app.get('/testPug', (req, res) => res.render("test", { name: "Charles" }));
+
+// ---------- PRODUCTS ----------
 app.get('/prod', requireAuthUser, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM shop.products');
-        console.log("DB QUERY RESULT:", result.rows);
-        let userRole = req.session.user.role;
+        const userRole = req.session.user.role;
         res.render("products", { products: result.rows, userRole });
-    } catch(err) {
+    } catch (err) {
         console.error("DB QUERY ERROR:", err);
         res.status(500).send("Failed to fetch products");
     }
 });
 
-
 app.get('/createProd', requireAuthAdmin, (req, res) => {
     res.render("productForm");
 });
-// app.get('/productsRest', (req, res) => {
-//     res.json(123products);
-// });
-app.get('/', (req, res) => {
-    res.send('Hello, World!');
-});
 
-app.get('/test', (req, res) => {
-    res.send('Hello, Test!');
-});
-app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
-});
-app.get('/hello', (req, res) => {
-    let name = req.query.name
-    res.send('Hello, '+name);
-});
-app.get('/testPug', function(req, res){
-    res.render("test", {name:"Charles"})
-})
-
-/*app.get('/prod', requireAuthUser, productController.getAllProducts  function(req, res) {
-    let userRole = req.session.user.role
-    res.render("products", { products, userRole });
-}) */
-
-// app.get('/createProd', requireAuthAdmin, function(req, res){
-//     res.render("productForm")
-// })
-app.post("/createProduct", requireAuthAdmin, async function(req, res){
-    let productName = req.body.name;
-    let productPrice = Number(req.body.price);
-
+app.post("/createProduct", requireAuthAdmin, async (req, res) => {
+    const { name, price } = req.body;
     try {
         await pool.query(
             "INSERT INTO shop.products (id, name, price) VALUES (nextval('shop.product_seq'), $1, $2)",
-            [productName, productPrice]
+            [name, Number(price)]
         );
         res.redirect("/prod");
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         res.status(500).send("Error creating product");
     }
 });
+
+app.get("/edit/:id", requireAuthAdmin, async (req, res) => {
+    const id = Number(req.params.id);
+    try {
+        const result = await pool.query('SELECT * FROM shop.products WHERE id=$1', [id]);
+        if (result.rows.length) {
+            res.render("editProduct", { product: result.rows[0] });
+        } else {
+            res.render("error", { message: "Product not found", backURL: "/prod" });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error fetching product");
+    }
+});
+
 app.post("/editProduct", requireAuthAdmin, async (req, res) => {
     const { id, name, price } = req.body;
     try {
@@ -114,48 +92,44 @@ app.post("/editProduct", requireAuthAdmin, async (req, res) => {
             [name, Number(price), Number(id)]
         );
         res.redirect("/prod");
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         res.status(500).send("Error updating product");
     }
 });
 
-
-app.get("/edit/:id", function (req, res){
-    let id = Number(req.params.id);
-    let productForEdit = products.filter(product => product.id === id)
-    if(productForEdit.length){
-        res.render("editProduct", {product:productForEdit[0]})
-    }
-    else{
-        res.render("error", {message:"product not found", backURL:"/prod"})
-    }
-
-})
 app.post("/delete/:id", requireAuthAdmin, async (req, res) => {
     const id = Number(req.params.id);
     try {
         await pool.query('DELETE FROM shop.products WHERE id=$1', [id]);
         res.redirect("/prod");
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         res.status(500).send("Error deleting product");
     }
 });
 
-app.get("/auth",function (req, res){
-    res.render("auth")
-})
-app.post("/auth", function(req,res){
-    let username=req.body.login
-    let password=req.body.password
-    let authUsers=users.filter(user=>user.name===username &&user.password===password)
-    if(authUsers.length){
-        req.session.user = authUsers[0]
-        let redirectPass = req.session.redirectPass?req.session.redirectPass:"/prod" // Тернарний оператор
-        res.redirect(redirectPass)
+// ---------- AUTH ----------
+app.get("/auth", (req, res) => res.render("auth"));
+
+app.post("/auth", async (req, res) => {
+    const { login, password } = req.body;
+    try {
+        const result = await pool.query(
+            'SELECT * FROM shop.users WHERE name=$1 AND password=$2',
+            [login, password]
+        );
+        if (result.rows.length) {
+            req.session.user = result.rows[0];
+            const redirectPass = req.session.redirectPass || "/prod";
+            res.redirect(redirectPass);
+        } else {
+            res.render("auth", { message: "User Invalid" });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Authentication error");
     }
-    else{
-        res.render("auth", {message: "User Invalid"})
-    }
-})
+});
+
+app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
