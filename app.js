@@ -17,9 +17,9 @@ const { Pool } = require('pg');
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'my_products_db',
-    password: 'newpassword', // your new password
-    port: 5433
+    database: 'Shop',
+    password: 'REMOVED', // your new password
+    port: 5432
 });
 
 const ProductController = require("./controllers/productController")
@@ -36,7 +36,7 @@ const port = 3000;
 let users = [{id: 1, password: "123", name: "Mykola", role: "USER"},{id:2, password:"Admin", name:"Admin", role:"ADMIN"}]
 app.get('/prod', requireAuthUser, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM products');
+        const result = await pool.query('SELECT * FROM shop.products');
         console.log("DB QUERY RESULT:", result.rows);
         let userRole = req.session.user.role;
         res.render("products", { products: result.rows, userRole });
@@ -85,7 +85,7 @@ app.post("/createProduct", requireAuthAdmin, async function(req, res){
 
     try {
         await pool.query(
-            'INSERT INTO products (name, price) VALUES ($1, $2)',
+            "INSERT INTO shop.products (id, name, price) VALUES (nextval('shop.product_seq'), $1, $2)",
             [productName, productPrice]
         );
         res.redirect("/prod");
@@ -98,7 +98,7 @@ app.post("/editProduct", requireAuthAdmin, async (req, res) => {
     const { id, name, price } = req.body;
     try {
         await pool.query(
-            'UPDATE products SET name=$1, price=$2 WHERE id=$3',
+            'UPDATE shop.products SET name=$1, price=$2 WHERE id=$3',
             [name, Number(price), Number(id)]
         );
         res.redirect("/prod");
@@ -123,7 +123,7 @@ app.get("/edit/:id", function (req, res){
 app.post("/delete/:id", requireAuthAdmin, async (req, res) => {
     const id = Number(req.params.id);
     try {
-        await pool.query('DELETE FROM products WHERE id=$1', [id]);
+        await pool.query('DELETE FROM shop.products WHERE id=$1', [id]);
         res.redirect("/prod");
     } catch(err) {
         console.error(err);
