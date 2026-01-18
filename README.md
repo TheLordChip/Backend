@@ -1,4 +1,4 @@
-Rate this README
+
 ```md
 # Shop Backend 🛒
 
