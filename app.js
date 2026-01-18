@@ -1,4 +1,6 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
 import session from 'express-session';
@@ -25,7 +27,18 @@ const pool = new Pool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
 });
+async function setupDatabase() {
+    try {
+        const setupSQL = fs.readFileSync(path.join(process.cwd(), 'setup.sql'), 'utf-8');
+        await pool.query(setupSQL);
+        console.log('Database setup complete from setup.sql.');
+    } catch (err) {
+        console.error('Error setting up database:', err);
+    }
+}
 
+await pool.query('SELECT current_database(), current_user');
+await setupDatabase();
 import ProductController from "./controllers/productController.js";
 import { requireAuthUser, requireAuthAdmin } from "./middleware/auth.js";
 
@@ -59,7 +72,7 @@ app.post("/createProduct", requireAuthAdmin, async (req, res) => {
     const { name, price } = req.body;
     try {
         await pool.query(
-            "INSERT INTO shop.products (id, name, price) VALUES (nextval('shop.product_seq'), $1, $2)",
+            "INSERT INTO shop.products (id, name, price) VALUES (nextval('shop.products_seq'), $1, $2)",
             [name, Number(price)]
         );
         res.redirect("/prod");
