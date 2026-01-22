@@ -1,5 +1,5 @@
 
-```md
+
 # Shop Backend 🛒
 
 **A Node.js backend for an online shop, connected to PostgreSQL.**  
@@ -89,4 +89,3 @@ This project is currently unlicensed. Contact me before using commercially.
 
 > Tip: Once set up, running the app is one command away—just npm start, and everything connects automatically.
 
-```
