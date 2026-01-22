@@ -16,3 +16,11 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT NOT NULL,
     password TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
+);
+-- INSERT INTO categories(name) VALUES('Food');
+-- INSERT INTO categories(name) VALUES('Clothes');
+-- ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id bigint;
+-- ALTER TABLE products ADD CONSTRAINT fk_categories foreign key (category_id) REFERENCES categories (id);

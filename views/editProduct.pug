@@ -10,6 +10,10 @@ html
             label price
             input(name="price" type="number" value=product.price)
             br
+            select(name="category") Category
+                each c in categories
+                    option(value=c.id selected=(c.id == product.category_id))= c.name
+            br
             input(type="submit" value="save")
         a(href="/prod") List products
         p=message

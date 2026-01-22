@@ -8,6 +8,10 @@ html
             label Price:
             input(name="price" type="number" required)
             br
+            select(name="category") Category
+                each c in categories
+                    option(value=c.id)=c.name
+            br
             input(type="submit" value="save" )
         a(href="/prod") List products
         if message
