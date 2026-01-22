@@ -9,8 +9,8 @@ html
                     td=p.price
                     td=p.category_name
                     td
-                        a(href="/edit/"+p.id) Edit product
                     if userRole==="ADMIN"
+                        a(href="/edit/"+p.id) Edit product
                         td
                             form(action="/delete/"+p.id method="POST")
                                 //input(type="hidden" name="_method" value="DELETE")

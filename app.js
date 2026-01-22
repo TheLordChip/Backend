@@ -159,7 +159,7 @@ console.log(name)
         [name, passwordHash, role]
     );
 
-    res.status(201).send('User created'); // now `res` is used
+    res.redirect(302, "/auth?message=User%20created%20successfully");// now `res` is used
 });
 
 
@@ -170,7 +170,9 @@ app.post('/login', async (req, res) => {
     );
 });
 // ---------- AUTH ----------
-app.get("/auth", (req, res) => res.render("auth"));
+app.get("/auth", (req, res) => {
+    res.render("auth", { message: req.query.message });
+});
 
 app.post("/auth", async (req, res) => {
     const { login, password } = req.body;
