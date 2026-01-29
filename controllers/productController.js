@@ -4,12 +4,17 @@ export default class ProductController {
     constructor() {
         this.productService = new ProductService();
         this.getAllProducts = this.getAllProducts.bind(this);
+        this.getCatalogue = this.getCatalogue.bind(this);
         this.getProductById = this.getProductById.bind(this);
         this.createProduct = this.createProduct.bind(this);
         this.updateProduct = this.updateProduct.bind(this);
         this.deleteProduct = this.deleteProduct.bind(this);
     }
 
+    async getCatalogue(req, res){
+        const products = await this.productService.getAll()
+        res.render("catalogue", {products: products})
+    }
     // GET /prod
     async getAllProducts(req, res) {
         try {

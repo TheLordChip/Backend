@@ -1,0 +1,78 @@
+table {
+    border-collapse: collapse;
+}
+
+/* 2. Actions cell */
+td.actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 3. REMOVE form layout behavior */
+.delete-form {
+    margin: 0;          /* ← critical */
+}
+
+/* 4. Normalize ALL buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100px;          /* ← fixed width, not min-width */
+    height: 32px;          /* ← fixed height = perfection */
+
+    padding: 0;            /* padding handled by height */
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit; /* ← CRITICAL */
+
+    border-radius: 6px;
+    border: none;
+    text-decoration: none;
+
+    cursor: pointer;
+    box-sizing: border-box;
+    background-color: blue;
+    color: white;
+}
+
+
+/* 5. Delete styling */
+.btn.delete {
+    background-color: #dc2626;
+    color: white;
+}
+.information{
+    border:1px solid #585858;
+    max-width: 300px;
+    border-radius: 10px;
+    padding: 15px 20px;
+    background-color: #e43b3b;
+    box-shadow: 2px 4px 5px #585858;
+    color: #ffffff;
+    font-family: "Annai MN";
+    width: 100%;          /* fill container */
+    max-width: 900px;     /* limit size */
+    margin: 0 auto;       /* center it */
+    border-collapse: collapse;
+}
+
+.product-container {
+    display:flex;
+    color: white;
+    flex-wrap: wrap;
+}
+.product {
+    width: 225px;
+    height: 225px;
+    background: blue;
+    padding: 7px;
+    border-radius: 7px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin: 5px;
+}

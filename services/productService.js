@@ -1,22 +1,13 @@
-import pkg from 'pg';
-const { Pool } = pkg;
-
-const pool = new Pool({
-    host: 'localhost',
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-});
+import ProductRepository from "../repositories/productRepository.js";
 
 export default class ProductService {
     constructor() {
         // No in-memory array needed
+        this.productRepository = new ProductRepository()
     }
 
     async getAll() {
-        const result = await pool.query('SELECT * FROM shop.products ORDER BY id');
-        return result.rows;
+        return this.productRepository.getAll()
     }
 
     async getById(id) {

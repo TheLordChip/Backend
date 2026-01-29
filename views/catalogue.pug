@@ -1,0 +1,11 @@
+html
+    head
+        link(rel="stylesheet" href="/css/style.css")
+    body
+        div.product-container
+            each p in products
+                div.product
+                    p= p.id
+                    h3.h1= p.name
+                    p.pr= p.price
+                    p.cat= p.category_name

@@ -24,3 +24,9 @@ CREATE TABLE IF NOT EXISTS categories (
 -- INSERT INTO categories(name) VALUES('Clothes');
 -- ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id bigint;
 -- ALTER TABLE products ADD CONSTRAINT fk_categories foreign key (category_id) REFERENCES categories (id);
+CREATE TABLE IF NOT EXISTS images(
+    id SERIAL PRIMARY KEY,
+    image_src TEXT,
+    main_image BOOLEAN,
+    product_id BIGINT
+);

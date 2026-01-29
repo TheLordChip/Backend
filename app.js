@@ -7,10 +7,21 @@ import session from 'express-session';
 import pkg from 'pg';
 import methodOverride from 'method-override';
 import { hashPassword, verifyPassword } from './middleware/password.js';
-
+import multer from 'multer';
 const app = express();
 app.use(express.json());
+app.use(express.static("public"));
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
 
+        cb(null, './uploads/');
+    },
+    filename: (req, file, cb) => {
+
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
 const { Pool } = pkg;
 const port = 3000;
 
@@ -30,7 +41,7 @@ const pool = new Pool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
 });
-
+let upload_fields = upload.fields([{ name: 'main_file', maxCount: 10 }, { name: 'other_files', maxCount: 10 }])
 async function setupDatabase() {
     try {
         const setupSQL = fs.readFileSync(path.join(process.cwd(), 'setup.sql'), 'utf-8');
@@ -57,20 +68,21 @@ app.get('/hello', (req, res) => res.send('Hello, ' + req.query.name));
 app.get('/testPug', (req, res) => res.render("test", { name: "Charles" }));
 
 // ---------- PRODUCTS ----------
-app.get('/prod', requireAuthUser, async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT p.id, p.name, p.price,' +
-            ' c.name as category_name ' +
-            'FROM shop.products p' +
-            ' LEFT JOIN shop.categories c ON p.category_id=c.id order by p.id');
-        const userRole = req.session.user.role;
-        res.render("products", { products: result.rows, userRole });
-    } catch (err) {
-        console.error("DB QUERY ERROR:", err);
-        res.status(500).send("Failed to fetch products");
-    }
-});
+// app.get('/prod', requireAuthUser, async (req, res) => {
+//     try {
+//         const result = await pool.query(
+//             'SELECT p.id, p.name, p.price,' +
+//             ' c.name as category_name ' +
+//             'FROM shop.products p' +
+//             ' LEFT JOIN shop.categories c ON p.category_id=c.id order by p.id');
+//         const userRole = req.session.user.role;
+//         res.render("products", { products: result.rows, userRole });
+//     } catch (err) {
+//         console.error("DB QUERY ERROR:", err);
+//         res.status(500).send("Failed to fetch products");
+//     }
+// });
+app.get('/prod', requireAuthUser, productController.getAllProducts)
 
 app.get('/createProd', requireAuthAdmin, async (req, res) => {
     const result = await pool.query('SELECT * FROM shop.categories');    // Look at Promise
@@ -78,7 +90,8 @@ app.get('/createProd', requireAuthAdmin, async (req, res) => {
     res.render("productForm", {categories:result.rows});
 });
 
-app.post("/createProduct", requireAuthAdmin, async (req, res) => {
+app.post("/createProduct", requireAuthAdmin, upload_fields, async (req, res) => {
+    console.log(req.body)
     const { name, price, category } = req.body;
     try {
         await pool.query(
@@ -91,7 +104,7 @@ app.post("/createProduct", requireAuthAdmin, async (req, res) => {
         res.status(500).send("Error creating product");
     }
 });
-
+app.get("/catalogue", productController.getCatalogue)
 app.get("/edit/:id", requireAuthAdmin, async (req, res) => {
     const id = Number(req.params.id);
     try {
@@ -138,29 +151,32 @@ app.get('/register', (req, res) => {
 app.post('/register', async (req, res) => {
     const passwordHash = await hashPassword(req.body.password);
     const name = req.body.name;
+
+    if (!name || name.trim() === "") {
+        return res.render("register", {
+            message: "You must type in a username"
+        });
+    }
+
     const result = await pool.query(
         'SELECT * FROM shop.users WHERE name=$1',
         [name]
     );
-    if(result.rows.length){
-        res.render("register", {
-            message: "User with name " + name + " already exists"
-        })
+
+    if (result.rows.length) {
+        return res.render("register", {
+            message: `User with name ${name} already exists`
+        });
     }
-    const role = "USER";
-    if (!passwordHash.startsWith('$2')) {
-        throw new Error('Password is not hashed');
-    }
-console.log(passwordHash)
-console.log(name)
-    // save to DB
+
     await pool.query(
         'INSERT INTO shop.users (name, password, role) VALUES ($1, $2, $3)',
-        [name, passwordHash, role]
+        [name, passwordHash, "USER"]
     );
 
-    res.redirect(302, "/auth?message=User%20created%20successfully");// now `res` is used
+    return res.redirect("/auth?message=User%20created%20successfully");
 });
+
 
 
 app.post('/login', async (req, res) => {

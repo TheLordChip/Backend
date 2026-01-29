@@ -1,19 +1,20 @@
 html
     head
+        link(rel="stylesheet" href="/css/style.css")
     body
-        table
+        table.information
             each p in products
-                tr
-                    td=p.id
-                    td=p.name
-                    td=p.price
-                    td=p.category_name
-                    td
-                    if userRole==="ADMIN"
-                        a(href="/edit/"+p.id) Edit product
-                        td
-                            form(action="/delete/"+p.id method="POST")
-                                //input(type="hidden" name="_method" value="DELETE")
-                                input(type="submit" value="DELETE")
+                tr.products
+                    td= p.id
+                    td.h1= p.name
+                    td.pr= p.price
+                    td.cat= p.category_name
+
+                    if userRole === "ADMIN"
+                        td.actions
+                            a.btn(href="/edit/" + p.id) Edit
+                            form.delete-form(action="/delete/" + p.id method="POST")
+                                button.btn.delete(type="submit") Delete
+
         if userRole==="ADMIN"
-            a(href="/createProd") create product
+            a.btn(href="/createProd") create product
