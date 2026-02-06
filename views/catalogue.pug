@@ -5,7 +5,7 @@ html
         div.product-container
             each p in products
                 div.product
-                    p= p.id
+                    img(src=p.file_name)
                     h3.h1= p.name
                     p.pr= p.price
                     p.cat= p.category_name

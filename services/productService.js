@@ -16,19 +16,7 @@ export default class ProductService {
     }
 
     async save(product) {
-        if (product.id) {
-            // Update existing product
-            await pool.query(
-                'UPDATE shop.products SET name=$1, price=$2 WHERE id=$3',
-                [product.name, Number(product.price), Number(product.id)]
-            );
-        } else {
-            // Insert new product
-            await pool.query(
-                "INSERT INTO shop.products (id, name, price) VALUES (nextval('shop.product_seq'), $1, $2)",
-                [product.name, Number(product.price)]
-            );
-        }
+        return this.productRepository.save(product)
     }
 
     async deleteById(id) {

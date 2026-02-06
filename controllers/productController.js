@@ -1,8 +1,10 @@
 import ProductService from "../services/productService.js";
+import ImageService from "../services/imageService.js";
 
 export default class ProductController {
     constructor() {
         this.productService = new ProductService();
+        this.imageService = new ImageService()
         this.getAllProducts = this.getAllProducts.bind(this);
         this.getCatalogue = this.getCatalogue.bind(this);
         this.getProductById = this.getProductById.bind(this);
@@ -13,6 +15,12 @@ export default class ProductController {
 
     async getCatalogue(req, res){
         const products = await this.productService.getAll()
+        for (const p of products) {
+            const mainImage= await this.imageService.getMainImage(p.id)
+            if(mainImage) {
+                p.file_name = "/uploads/" + mainImage.src
+            }
+        }
         res.render("catalogue", {products: products})
     }
     // GET /prod
@@ -46,8 +54,19 @@ export default class ProductController {
     // POST /createProduct
     async createProduct(req, res) {
         try {
-            const { name, price } = req.body;
-            await this.productService.save({ name, price });
+            const { name, price, category_id } = req.body;
+            const product = await this.productService.save({ name, price, category_id });
+            if(req.files.main_file){
+                let fileNames = req.files.main_file.map(lm => lm.filename);
+                if(fileNames.length){
+                    const image = {
+                        src: fileNames[0],
+                        main: true,
+                        product_id: product.id
+                    }
+                    await this.imageService.save(image)
+                }
+            }
             res.redirect("/prod");
         } catch (err) {
             console.error(err);

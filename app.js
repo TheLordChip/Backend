@@ -104,6 +104,7 @@ app.post("/createProduct", requireAuthAdmin, upload_fields, async (req, res) => 
         res.status(500).send("Error creating product");
     }
 });
+app.post("/createProduct", requireAuthAdmin, upload_fields, productController.createProduct )
 app.get("/catalogue", productController.getCatalogue)
 app.get("/edit/:id", requireAuthAdmin, async (req, res) => {
     const id = Number(req.params.id);
