@@ -1,0 +1,7 @@
+POST http://localhost:3000/authWithToken
+Content-Type: application/json
+
+{
+  "login": "SAJDkasjdasidsadhasio",
+  "password": "21312312312313"
+}

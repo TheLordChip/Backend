@@ -7,10 +7,18 @@ import session from 'express-session';
 import pkg from 'pg';
 import methodOverride from 'method-override';
 import { hashPassword, verifyPassword } from './middleware/password.js';
+import {generateToken} from "./middleware/auth.js";
 import multer from 'multer';
+import cors from 'cors';
+
 const app = express();
 app.use(express.json());
 app.use(express.static("public"));
+
+app.use(cors({
+    origin: 'http://localhost:5173'}
+));
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
 
@@ -55,9 +63,10 @@ async function setupDatabase() {
 await pool.query('SELECT current_database(), current_user');
 await setupDatabase();
 import ProductController from "./controllers/productController.js";
-import { requireAuthUser, requireAuthAdmin } from "./middleware/auth.js";
 
+import { requireAuthUser, requireAuthAdmin,requireAuthUserByJwt } from "./middleware/auth.js";
 const productController = new ProductController();
+
 
 app.set("view engine", "pug");
 app.set("views", "./views");
@@ -218,5 +227,42 @@ app.post("/auth", async (req, res) => {
         res.status(500).send("Authentication error");
     }
 });
+app.post("/authWithToken", async (req, res) => {
+    const { login, password } = req.body;
+    try {
+        const result = await pool.query(
+            'SELECT * FROM shop.users WHERE name=$1',
+            [login]
+        );
+        console.log(result)
+        if (result.rows.length) {
+            const passwordVerify = await verifyPassword(password, result.rows[0].password)
+            if(passwordVerify){
+                // req.session.user = result.rows[0];
+                // console.log(result.rows[0])
+                // const redirectPass = req.session.redirectPass || "/prod";
+                // res.redirect(redirectPass);
+                let user = result.rows[0]
+                let token = generateToken(user)
+                res.status(200).json({ jwt:token })
+            }
+            else{
+                // res.render("auth", { message: "User Invalid" });\
+                res.status(401).json({ message: "User Invalid" })
+            }
+        } else {
+            res.status(401).json({ message: "User does not exist" })
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Authentication error");
+    }
+});
+
+//
+import ProductRestController from "./rest-controllers/productRestController.js";
+const productRestController = new ProductRestController();
+
+app.get("/getAllProducts",requireAuthUserByJwt,productRestController.getAllProducts);
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
